@@ -87,7 +87,7 @@ app.get("/api/contacts", async (req, res) => {
   }
 });
 
-app.get("/api/contacts", async (req, res) => {
+app.get("/api/contacts/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const contact = await getContactById(parseInt(id));

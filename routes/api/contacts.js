@@ -1,4 +1,4 @@
-const { router } = require("../app.js");
+const { router } = require("../../app.js");
 
 const {
   listContacts,
@@ -7,7 +7,7 @@ const {
   addContact,
   updateContact,
   validateUpdateContact,
-} = require("./contacts-controllers.js");
+} = require("./contacts-contollers.js");
 
 // routes
 router.get("/", async (req, res, next) => {

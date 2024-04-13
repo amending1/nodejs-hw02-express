@@ -1,14 +1,16 @@
+const { router } = require("../app.js");
 
-const { router,
+const {
   listContacts,
   getContactById,
   removeContact,
   addContact,
   updateContact,
-  validateUpdateContact} = require('./app.js')
+  validateUpdateContact,
+} = require("./contacts-controllers.js");
 
 // routes
-router.get('/api/contacts', async (req, res, next) => {
+router.get("/", async (req, res, next) => {
   try {
     const allContacts = await listContacts();
     res.status(200).json(allContacts);
@@ -17,7 +19,7 @@ router.get('/api/contacts', async (req, res, next) => {
   }
 });
 
-router.get('/api/contacts/:id', async (req, res, next) => {
+router.get("/:id", async (req, res, next) => {
   const { id } = req.params;
   try {
     const contact = await getContactById(parseInt(id));
@@ -27,7 +29,7 @@ router.get('/api/contacts/:id', async (req, res, next) => {
   }
 });
 
-router.post('/api/contacts', async (req, res, next) => {
+router.post("/", async (req, res, next) => {
   const { name, email, phone } = req.body;
   if (!name || !email || !phone) {
     res.status(400).json({ message: "Missing required fields" });
@@ -41,7 +43,7 @@ router.post('/api/contacts', async (req, res, next) => {
   }
 });
 
-router.delete('/api/contacts/:id', async (req, res, next) => {
+router.delete("/:id", async (req, res, next) => {
   const { id } = req.params;
   try {
     await removeContact(parseInt(id));
@@ -51,7 +53,7 @@ router.delete('/api/contacts/:id', async (req, res, next) => {
   }
 });
 
-router.put('/api/contacts/:id', async (req, res, next) => {
+router.put("/:id", async (req, res, next) => {
   const { id } = req.params;
 
   const { error } = validateUpdateContact(req.body);
@@ -69,5 +71,3 @@ router.put('/api/contacts/:id', async (req, res, next) => {
     res.status(404).json({ message: "Not found" });
   }
 });
-
-

@@ -1,7 +1,7 @@
 const Joi = require("joi");
 const nanoid = require("nanoid");
 
-const contacts = require("../models/contacts.json");
+const contacts = require("../../models/contacts.json");
 
 // funkcje pomocnicze
 const listContacts = async () => {

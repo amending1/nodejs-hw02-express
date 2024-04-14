@@ -1,4 +1,4 @@
-const { router } = require("../../app.js");
+const router = require("../../app.js");
 
 const {
   listContacts,

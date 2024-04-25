@@ -8,7 +8,8 @@ const {
   addContact,
   updateContact,
   validateUpdateContact,
-} = require("./contacts-contollers.js");
+  updateStatusContact,
+} = require("./contacts-service.js");
 
 // routes
 router.get("/", async (req, res, next) => {
@@ -73,6 +74,29 @@ router.put("/:id", async (req, res, next) => {
     res.status(200).json(updatedContact);
   } catch (error) {
     res.status(404).json({ message: "Not found" });
+  }
+});
+
+router.patch("/:contactId/favorite", async (req, res, next) => {
+  const { contactId } = req.params;
+  const { favorite } = req.body;
+console.log(favorite);
+  // Sprawdzam, czy body zawiera pole favorite
+  if (typeof favorite === 'undefined') {
+    res.status(400).json({ message: "missing field favorite" });
+    return;
+  }
+
+  try {
+    const updatedContact = await updateStatusContact(contactId, { favorite });
+    if (!updatedContact) {
+      res.status(404).json({ message: "Not found" });
+      return;
+    }
+    res.status(200).json(updatedContact);
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 

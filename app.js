@@ -18,7 +18,9 @@ app.use(morgan("dev"));
 // obsługuje nagłówki CORS (Cross-Origin Resource Sharing), które pozwalają na bezpieczne wykonywanie żądań między różnymi domenami
 app.use(cors());
 
-const contactsRouter = require("./routes/api/contacts");
+
+
+const contactsRouter = require("./routes/api/contacts-controllers");
 app.use("/api/contacts", contactsRouter);
 
 module.exports = 

@@ -109,6 +109,8 @@ const updateStatusContact = async (contactId, body) => {
   }
 };
 
+const validateBoolean = (value) => typeof value === 'boolean';
+
 // walidacja
 const validateUpdateContact = (data) => {
   const schema = Joi.object({
@@ -127,4 +129,5 @@ module.exports = {
   updateContact,
   validateUpdateContact,
   updateStatusContact,
+  validateBoolean,
 };

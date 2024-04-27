@@ -9,6 +9,7 @@ const {
   updateContact,
   validateUpdateContact,
   updateStatusContact,
+  validateBoolean,
 } = require("./contacts-service.js");
 
 // routes
@@ -34,7 +35,7 @@ router.get("/:id", async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   const { name, email, phone } = req.body;
-    if (!name || !email || !phone) {
+  if (!name || !email || !phone) {
     res.status(400).json({ message: "Missing required fields" });
     return;
   }
@@ -80,9 +81,9 @@ router.put("/:id", async (req, res, next) => {
 router.patch("/:contactId/favorite", async (req, res, next) => {
   const { contactId } = req.params;
   const { favorite } = req.body;
-console.log(favorite);
+  console.log(favorite);
   // Sprawdzam, czy body zawiera pole favorite
-  if (typeof favorite === 'undefined') {
+  if (typeof favorite === "undefined" || !validateBoolean(favorite)) {
     res.status(400).json({ message: "missing field favorite" });
     return;
   }

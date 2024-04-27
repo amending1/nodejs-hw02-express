@@ -1,7 +1,7 @@
 const app = require("./app.js");
 const PORT = 3000;
 
-const connection = require("./providers/db-provider.js");
+const { connection } = require("./providers/db-provider.js");
 
 connection
   .then(() => {

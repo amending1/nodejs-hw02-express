@@ -93,7 +93,7 @@ router.post("/login", async (req, res) => {
 router.get("/logout", authenticateToken, async (req, res) => {
   try {
     // wyciągam id z tokena
-    const userId = req.user._id;
+    const userId = req.user.id;
     // szukanie użtkownika po id w bazie
     const user = await User.findById(userId);
     if (!user) {
@@ -112,10 +112,10 @@ router.get("/logout", authenticateToken, async (req, res) => {
 
 router.get("/current", authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.id;
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(401).json({ message: "Not authorized" });
+      return res.status(401).json({ message: "Not authorized (user was not found in the database)" });
     }
     res.status(200).json({
       email: user.email,

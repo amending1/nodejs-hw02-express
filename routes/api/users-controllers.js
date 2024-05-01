@@ -8,6 +8,12 @@ const {
   validateLogin,
   authenticateToken,
 } = require("./users-service.js");
+const multer = require("multer");
+const fs = require("fs").promises;
+const path = require("path");
+// const jimp = require("jimp");
+const { v4: uuidv4 } = require('uuid');
+const gravatar = require("gravatar");
 
 router.post("/signup", async (req, res) => {
   // Walidacja danych wejściowych
@@ -32,6 +38,11 @@ router.post("/signup", async (req, res) => {
       email,
       password: hashedPassword,
     });
+
+    // gravatar.url(email, options) - funkcja z biblioteki Gravatar, generuje adres URL awatara na podstawie emaila użytkownika. Parametr options - obiekt zawierający opcje konfiguracyjne
+    const avatar = gravatar.url(email, { protocol: "https", s: "250" });
+    newUser.avatarURL = avatar;
+
     await newUser.save();
 
     res.status(201).json({
@@ -97,7 +108,9 @@ router.get("/logout", authenticateToken, async (req, res) => {
     // szukanie użtkownika po id w bazie
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(401).json({ message: "Not authorized (user was not found in the database)" });
+      return res.status(401).json({
+        message: "Not authorized (user was not found in the database)",
+      });
     }
     // usuwam token użytkownika - token użytkownika jest ustawiany na null, co oznacza, że użytkownik zostaje wylogowany
     user.token = null;
@@ -115,7 +128,9 @@ router.get("/current", authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const user = await User.findById(userId);
     if (!user) {
-      return res.status(401).json({ message: "Not authorized (user was not found in the database)" });
+      return res.status(401).json({
+        message: "Not authorized (user was not found in the database)",
+      });
     }
     res.status(200).json({
       email: user.email,
@@ -127,4 +142,54 @@ router.get("/current", authenticateToken, async (req, res) => {
   }
 });
 
+// TWORZENIE AVATARA
+// konfiguracja multera
+const temporaryDir = path.join(process.cwd(), '../tmp');
+const storeImageDir = path.join(process.cwd(), 'public/images')
+const storage = multer.diskStorage({
+  destination: function (req, file, callback) {
+    callback(null, temporaryDir);
+  },
+  filename: function (req, file, callback) {
+    callback(null, `${uuidv4()}${file.originalname}`);
+  },
+});
+
+const extensionWhiteList = [".jpg", ".jpeg", ".png", ".gif"];
+const mimetypeWhiteList = ["image/png", "image/jpg", "image/jpeg", "image/gif"];
+
+const uploadMiddleware = multer({ 
+  storage,
+  fileFilter: async (req, file, callback) => {
+    const extension = path.extname(file.originalname).toLowerCase();
+    const mimetype = file.mimetype;
+    if (
+      !extensionWhiteList.includes(extension) ||
+      !mimetypeWhiteList.includes(mimetype)
+  ) {
+      return callback(null, false);
+  }
+  return callback(null, true);
+},
+limits: {
+  fileSize: 250 * 250,
+},
+});
+
+router.patch(
+  "/avatars",
+  uploadMiddleware.single("avatar"),
+  async (req, res) => {
+    const { path: temporaryPath } = req.file;
+        const extension = path.extname(temporaryPath);
+        const fileName = `${uuidv4()}${extension}`;
+        const filePath = path.join(storeImageDir, fileName);
+    try {
+      await fs.rename(temporaryPath, filePath);
+    } catch (error) {
+      console.error("Error during avatar upload:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  }
+);
 module.exports = router;

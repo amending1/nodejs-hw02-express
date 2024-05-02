@@ -26,7 +26,7 @@ const contactsRouter = require("./routes/api/contacts-controllers.js");
 app.use("/api/contacts", contactsRouter);
 
 const path = require('path');
-// ustawienie folderu publicznego dla plików statycznych
+// ta linia kodu ustawia folder public jako katalog, z którego serwuje się pliki statyczne.  path.resolve() jest używane do uzyskania pełnej ścieżki do katalogu public
 app.use(express.static(path.resolve(__dirname, 'public')));
 
 module.exports = app;

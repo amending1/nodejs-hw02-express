@@ -12,7 +12,7 @@ const multer = require("multer");
 const fs = require("fs").promises;
 const path = require("path");
 // const jimp = require("jimp");
-const { v4: uuidv4 } = require('uuid');
+const { v4: uuidv4 } = require("uuid");
 const gravatar = require("gravatar");
 
 router.post("/signup", async (req, res) => {
@@ -144,8 +144,11 @@ router.get("/current", authenticateToken, async (req, res) => {
 
 // TWORZENIE AVATARA
 // konfiguracja multera
-const temporaryDir = path.join(process.cwd(), '../tmp');
-const storeImageDir = path.join(process.cwd(), 'public/images')
+// tworzę ścieżki do katalogów
+// Pliki są przechowywane tutaj tylko tymczasowo, zanim zostaną przeniesione do ich ostatecznego miejsca docelowego (czyli storeImageDir). Ten katalog jest używany do uniknięcia konfliktów nazw plików i umożliwienia przetwarzania wielu plików jednocześnie, bez ryzyka nadpisania istniejących plików
+const temporaryDir = path.join(process.cwd(), "../tmp");
+// katalog docelowy - po przetworzeniu i sprawdzeniu poprawności plików w katalogu tymczasowym, są one przenoszone tu
+const storeImageDir = path.join(process.cwd(), "../public/avatars");
 const storage = multer.diskStorage({
   destination: function (req, file, callback) {
     callback(null, temporaryDir);
@@ -156,39 +159,43 @@ const storage = multer.diskStorage({
 });
 
 const extensionWhiteList = [".jpg", ".jpeg", ".png", ".gif"];
+// Typy MIME (Multipurpose Internet Mail Extensions) są sposobem identyfikowania formatów plików i typów treści w Internecie. Są wykorzystywane do określenia rodzaju danych zawartych w pliku na podstawie jego nagłówka lub rozszerzenia
 const mimetypeWhiteList = ["image/png", "image/jpg", "image/jpeg", "image/gif"];
 
-const uploadMiddleware = multer({ 
+const uploadMiddleware = multer({
   storage,
   fileFilter: async (req, file, callback) => {
+    // zwraca rozszerzenie pliku na podstawie podanej ścieżki do pliku (więc zwraca '.jpg')
     const extension = path.extname(file.originalname).toLowerCase();
     const mimetype = file.mimetype;
     if (
       !extensionWhiteList.includes(extension) ||
       !mimetypeWhiteList.includes(mimetype)
-  ) {
-      return callback(null, false);
-  }
-  return callback(null, true);
-},
-limits: {
-  fileSize: 250 * 250,
-},
+    ) {
+      return callback(null, false); // plik zostanie odrzucony
+    }
+    return callback(null, true); // pozwala na przetworzenie pliku
+  },
 });
 
 router.patch(
   "/avatars",
   uploadMiddleware.single("avatar"),
-  async (req, res) => {
+  async (req, res, next) => {
     const { path: temporaryPath } = req.file;
-        const extension = path.extname(temporaryPath);
-        const fileName = `${uuidv4()}${extension}`;
-        const filePath = path.join(storeImageDir, fileName);
+    const extension = path.extname(temporaryPath);
+    const fileName = `${uuidv4()}${extension}`;
+    //  gdy plik został przesłany pomyślnie i znajduje się w katalogu tymczasowym, następuje przeniesienie go do katalogu docelowego
+    const filePath = path.join(storeImageDir, fileName);
     try {
+      //  funkcja fs.rename zmienia lokalizację pliku tymczasowego na docelowy katalog i nadając mu jednocześnie unikalną nazwę
       await fs.rename(temporaryPath, filePath);
     } catch (error) {
+      // W przypadku wystąpienia błędu plik tymczasowy zostaje usunięty
+      await fs.unlink(temporaryPath);
       console.error("Error during avatar upload:", error);
       res.status(500).json({ message: "Internal server error" });
+      return next(error);
     }
   }
 );

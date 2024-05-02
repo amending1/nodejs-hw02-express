@@ -146,9 +146,9 @@ router.get("/current", authenticateToken, async (req, res) => {
 // konfiguracja multera
 // tworzę ścieżki do katalogów
 // Pliki są przechowywane tutaj tylko tymczasowo, zanim zostaną przeniesione do ich ostatecznego miejsca docelowego (czyli storeImageDir). Ten katalog jest używany do uniknięcia konfliktów nazw plików i umożliwienia przetwarzania wielu plików jednocześnie, bez ryzyka nadpisania istniejących plików
-const temporaryDir = path.join(process.cwd(), "../tmp");
+const temporaryDir = path.join(process.cwd(), "../../tmp");
 // katalog docelowy - po przetworzeniu i sprawdzeniu poprawności plików w katalogu tymczasowym, są one przenoszone tu
-const storeImageDir = path.join(process.cwd(), "../public/avatars");
+const storeImageDir = path.join(process.cwd(), "../../public/avatars");
 const storage = multer.diskStorage({
   destination: function (req, file, callback) {
     callback(null, temporaryDir);

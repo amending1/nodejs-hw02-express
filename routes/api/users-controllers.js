@@ -7,6 +7,7 @@ const {
   validateSignup,
   validateLogin,
   authenticateToken,
+  isImageAndTransform, 
 } = require("./users-service.js");
 const multer = require("multer");
 const fs = require("fs").promises;
@@ -146,9 +147,11 @@ router.get("/current", authenticateToken, async (req, res) => {
 // konfiguracja multera
 // tworzę ścieżki do katalogów
 // Pliki są przechowywane tutaj tylko tymczasowo, zanim zostaną przeniesione do ich ostatecznego miejsca docelowego (czyli storeImageDir). Ten katalog jest używany do uniknięcia konfliktów nazw plików i umożliwienia przetwarzania wielu plików jednocześnie, bez ryzyka nadpisania istniejących plików
-const temporaryDir = path.join(process.cwd(), "../../tmp");
+// process.cwd() ZWRACA bieżący katalog roboczy procesu Node.js. Katalog roboczy to katalog, w którym proces Node.js został uruchomiony. Oznacza to, że process.cwd() zwraca ścieżkę do katalogu, w którym znajduje się plik JavaScript, w którym wywołano tę funkcję, w momencie uruchomienia programu.
+const temporaryDir = path.join(process.cwd(), "tmp");
+console.log(temporaryDir);
 // katalog docelowy - po przetworzeniu i sprawdzeniu poprawności plików w katalogu tymczasowym, są one przenoszone tu
-const storeImageDir = path.join(process.cwd(), "../../public/avatars");
+const storeImageDir = path.join(process.cwd(), "public/avatars");
 const storage = multer.diskStorage({
   destination: function (req, file, callback) {
     callback(null, temporaryDir);
@@ -197,6 +200,14 @@ router.patch(
       res.status(500).json({ message: "Internal server error" });
       return next(error);
     }
+    const isValidAndTransform = await isImageAndTransform(filePath);
+        if (!isValidAndTransform) {
+            await fs.unlink(filePath);
+            return res
+                .status(400)
+                .json({ message: "File is not a photo" });
+        }
+    res.send("ok");
   }
 );
 module.exports = router;

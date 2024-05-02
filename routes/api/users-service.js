@@ -2,6 +2,9 @@ const { Schema, model } = require("mongoose");
 const Joi = require("joi");
 const jwt = require("jsonwebtoken");
 const Jimp = require("jimp");
+const multer = require("multer");
+const path = require("path");
+const { v4: uuidv4 } = require("uuid");
 
 const userSchema = new Schema({
   password: {
@@ -108,10 +111,50 @@ const isImageAndTransform = async (path) =>
     });
   });
 
+  // TWORZENIE AVATARA
+// konfiguracja multera
+// tworzę ścieżki do katalogów
+// Pliki są przechowywane tutaj tylko tymczasowo, zanim zostaną przeniesione do ich ostatecznego miejsca docelowego (czyli storeImageDir). Ten katalog jest używany do uniknięcia konfliktów nazw plików i umożliwienia przetwarzania wielu plików jednocześnie, bez ryzyka nadpisania istniejących plików
+// process.cwd() ZWRACA bieżący katalog roboczy procesu Node.js. Katalog roboczy to katalog, w którym proces Node.js został uruchomiony. Oznacza to, że process.cwd() zwraca ścieżkę do katalogu, w którym znajduje się plik JavaScript, w którym wywołano tę funkcję, w momencie uruchomienia programu.
+const temporaryDir = path.join(process.cwd(), "tmp");
+console.log(temporaryDir);
+// katalog docelowy - po przetworzeniu i sprawdzeniu poprawności plików w katalogu tymczasowym, są one przenoszone tu
+const storeImageDir = path.join(process.cwd(), "public/avatars");
+const storage = multer.diskStorage({
+  destination: function (req, file, callback) {
+    callback(null, temporaryDir);
+  },
+  filename: function (req, file, callback) {
+    callback(null, `${uuidv4()}${file.originalname}`);
+  },
+});
+
+const extensionWhiteList = [".jpg", ".jpeg", ".png", ".gif"];
+// Typy MIME (Multipurpose Internet Mail Extensions) są sposobem identyfikowania formatów plików i typów treści w Internecie. Są wykorzystywane do określenia rodzaju danych zawartych w pliku na podstawie jego nagłówka lub rozszerzenia
+const mimetypeWhiteList = ["image/png", "image/jpg", "image/jpeg", "image/gif"];
+
+const uploadMiddleware = multer({
+  storage,
+  fileFilter: async (req, file, callback) => {
+    // zwraca rozszerzenie pliku na podstawie podanej ścieżki do pliku (więc zwraca '.jpg')
+    const extension = path.extname(file.originalname).toLowerCase();
+    const mimetype = file.mimetype;
+    if (
+      !extensionWhiteList.includes(extension) ||
+      !mimetypeWhiteList.includes(mimetype)
+    ) {
+      return callback(null, false); // plik zostanie odrzucony
+    }
+    return callback(null, true); // pozwala na przetworzenie pliku
+  },
+});
+
 module.exports = {
   User,
   validateSignup,
   validateLogin,
   authenticateToken,
   isImageAndTransform,
+  uploadMiddleware,
+  storeImageDir
 };

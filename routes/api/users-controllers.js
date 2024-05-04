@@ -9,7 +9,9 @@ const {
   authenticateToken,
   isImageAndTransform, 
   uploadMiddleware,
-  storeImageDir
+  storeImageDir,
+  client,
+  verificationToken,
 } = require("./users-service.js");
 const fs = require("fs").promises;
 const path = require("path");
@@ -40,11 +42,46 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
     });
 
+  // ustawiam verification token w modelu User
+  newUser.verificationToken = verificationToken;
+  await newUser.save();
+
+  // wysyłam email z odnośnikiem do weryfikacji
+  const sender = {
+    email: process.env.EMAIL_FROM,
+    name: "Mailtrap Test",
+  };
+  const recipients = [
+    {
+      email: newUser.email,
+    }
+  ];
+
+  client
+    .send({
+      from: sender,
+      to: recipients,
+      subject: "Email verification",
+      text: `Please click the following link to verify your email: ${process.env.BASE_URL}/users/verify/${verificationToken}`,
+      category: "Integration Test",
+    })
+    .then(() => {
+      console.log('Email sent');
+      res.status(201).json({
+        user: {
+          email: newUser.email,
+          subscription: newUser.subscription,
+        },
+        message: 'Verification email sent'
+      });
+    }, (error) => {
+      console.error("Error sending verification email:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    });
+
     // gravatar.url(email, options) - funkcja z biblioteki Gravatar, generuje adres URL awatara na podstawie emaila użytkownika. Parametr options - obiekt zawierający opcje konfiguracyjne
     const avatar = gravatar.url(email, { protocol: "https", s: "250" });
     newUser.avatarURL = avatar;
-
-    await newUser.save();
 
     res.status(201).json({
       user: {
@@ -56,6 +93,7 @@ router.post("/signup", async (req, res) => {
     console.error("Error during signup:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+
 });
 
 router.post("/login", async (req, res) => {
@@ -174,4 +212,85 @@ router.patch(
     res.send("ok");
   }
 );
+
+router.get('/auth/verify/:verificationToken', async (req,res) => {
+  const { verificationToken } = req.params;
+
+  try {
+    // szukam użytkownika po verificationToken
+    const user = await User.findOne({ verificationToken});
+    if (!user) {
+      return res.status(404).json({ message: 'User not found'});
+    }
+
+    user.verify = true;
+    user.verificationToken = null;
+    await user.save();
+
+    res.status(200).json({ message: 'Verification successful' })
+  } catch (error) {
+    console.error('Error during email verification:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.post('/verify', async (req, res) => {
+  const { email } = req.body;
+
+  // walidacja danych wejściowych
+  if (!email) {
+    return res.status(400).json({ message: 'Missing required field email'});
+  }
+
+  try {
+    // szukam użytkownika po mailu
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found'});
+    }
+
+    // sprawdzam, czy użytkownik nie został już zweryfikowany
+    if(user.verify) {
+      return res.status(400).json({ message: "Verification has already been passed"});
+    }
+
+  // generuję nowy verificationToken
+  const verificationToken = uuidv4();
+
+  // ustawiam nowy verificationToken i zapisuję użytkownika
+  user.verificationToken = verificationToken;
+  await user.save();
+
+  // wysyłam ponownie email z odnośnikiem do werifikacji
+  const sender = {
+    email: "process.env.EMAIL_FROM",
+    name: "Mailtrap Test",
+  };
+  const recipients = [
+    {
+      email: user.email,
+    }
+  ];
+
+  client
+    .send({
+      from: sender,
+      to: recipients,
+      subject: "Email verification",
+      text: `Please click the following link to verify your email: ${process.env.BASE_URL}/users/verify/${verificationToken}`,
+      category: "Integration Test",
+    })
+    .then(() => {
+      console.log('Email sent');
+      res.status(200).json({ message: "Verification email sent" });
+    }, (error) => {
+      console.error("Error sending verification email:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    });
+} catch (error) {
+  console.error("Error during resending verification email:", error);
+  res.status(500).json({ message: "Internal server error" });
+  }
+})
+
 module.exports = router;

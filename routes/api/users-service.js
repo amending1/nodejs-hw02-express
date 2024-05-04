@@ -5,6 +5,8 @@ const Jimp = require("jimp");
 const multer = require("multer");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
+require('dotenv').config();
+const { MailtrapClient }  = require("mailtrap");
 
 const userSchema = new Schema({
   password: {
@@ -28,6 +30,14 @@ const userSchema = new Schema({
   avatarURL: {
     type: String,
     default: null,
+  },
+  verify: {
+    type: Boolean,
+    default: false,
+  },
+  verificationToken: {
+    type: String,
+    required: [true, "Verify token is required"],
   },
 });
 
@@ -111,7 +121,7 @@ const isImageAndTransform = async (path) =>
     });
   });
 
-  // TWORZENIE AVATARA
+// TWORZENIE AVATARA
 // konfiguracja multera
 // tworzę ścieżki do katalogów
 // Pliki są przechowywane tutaj tylko tymczasowo, zanim zostaną przeniesione do ich ostatecznego miejsca docelowego (czyli storeImageDir). Ten katalog jest używany do uniknięcia konfliktów nazw plików i umożliwienia przetwarzania wielu plików jednocześnie, bez ryzyka nadpisania istniejących plików
@@ -149,6 +159,11 @@ const uploadMiddleware = multer({
   },
 });
 
+const client = new MailtrapClient({ endpoint: "https://send.api.mailtrap.io/", token: process.env.MAILTRAP_API_KEY });
+
+// generowanie tokenu weryfikacyjnego
+const verificationToken = uuidv4();
+
 module.exports = {
   User,
   validateSignup,
@@ -156,5 +171,7 @@ module.exports = {
   authenticateToken,
   isImageAndTransform,
   uploadMiddleware,
-  storeImageDir
+  storeImageDir,
+client,
+  verificationToken,
 };

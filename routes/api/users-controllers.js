@@ -226,7 +226,7 @@ router.get('/users/verify/:verificationToken', async (req,res) => {
   }
 });
 
-router.post('/verify', async (req, res) => {
+router.post('/users/verify', async (req, res) => {
   const { email } = req.body;
 
   // walidacja danych wejściowych

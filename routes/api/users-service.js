@@ -1,12 +1,14 @@
 const { Schema, model } = require("mongoose");
 const Joi = require("joi");
+
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const Jimp = require("jimp");
 const multer = require("multer");
 const path = require("path");
 const { v4: uuidv4 } = require("uuid");
-require('dotenv').config();
-const { MailtrapClient }  = require("mailtrap");
+require("dotenv").config();
+const { MailtrapClient } = require("mailtrap");
 
 const userSchema = new Schema({
   password: {
@@ -73,8 +75,11 @@ const authenticateToken = (req, res, next) => {
         "Not authorized (the token does not exist - it was not sent in the header)",
     });
   }
-
-  jwt.verify(token, `${process.env.JWT_SECRET}`, (err, user) => {
+  const generateJWTSecret = () => {
+    return crypto.randomBytes(32).toString("hex");
+  };
+  const JWT_SECRET = generateJWTSecret();
+  jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) {
       return res
         .status(401)
@@ -159,7 +164,10 @@ const uploadMiddleware = multer({
   },
 });
 
-const client = new MailtrapClient({ endpoint: "https://send.api.mailtrap.io/", token: process.env.MAILTRAP_API_KEY });
+const client = new MailtrapClient({
+  endpoint: "https://send.api.mailtrap.io/",
+  token: process.env.MAILTRAP_API_KEY,
+});
 
 // generowanie tokenu weryfikacyjnego
 const verificationToken = uuidv4();
@@ -172,6 +180,6 @@ module.exports = {
   isImageAndTransform,
   uploadMiddleware,
   storeImageDir,
-client,
+  client,
   verificationToken,
 };

@@ -1,3 +1,4 @@
+// Narzędzie dotenv jest używane do automatycznego ładowania zmiennych środowiskowych z pliku .env do obiektu process.env w Node.js. Dzięki temu uzyskujęć dostęp do tych zmiennych w kodzie poprzez process.env.NAZWA_ZMIENNEJ.
 require('dotenv').config();
 const app = require("./app.js");
 const PORT = 3000;

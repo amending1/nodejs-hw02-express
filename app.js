@@ -1,6 +1,3 @@
-// Narzędzie dotenv jest używane do automatycznego ładowania zmiennych środowiskowych z pliku .env do obiektu process.env w Node.js. Dzięki temu uzyskujęć dostęp do tych zmiennych w kodzie poprzez process.env.NAZWA_ZMIENNEJ.
-require("dotenv").config();
-
 const express = require("express");
 // Morgan - middleware do logowania żądań HTTP w aplikacjach Node.js, szczególnie tych opartych na Express.js
 const morgan = require("morgan");

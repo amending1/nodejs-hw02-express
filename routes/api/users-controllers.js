@@ -67,13 +67,7 @@ router.post("/signup", async (req, res) => {
     })
     .then(() => {
       console.log('Email sent');
-      res.status(201).json({
-        user: {
-          email: newUser.email,
-          subscription: newUser.subscription,
-        },
-        message: 'Verification email sent'
-      });
+
     }, (error) => {
       console.error("Error sending verification email:", error);
       return res.status(500).json({ message: "Internal server error" });
@@ -181,8 +175,6 @@ router.get("/current", authenticateToken, async (req, res) => {
   }
 });
 
-
-
 router.patch(
   "/avatars",
   uploadMiddleware.single("avatar"),
@@ -213,7 +205,7 @@ router.patch(
   }
 );
 
-router.get('/auth/verify/:verificationToken', async (req,res) => {
+router.get('/users/verify/:verificationToken', async (req,res) => {
   const { verificationToken } = req.params;
 
   try {
@@ -263,7 +255,7 @@ router.post('/verify', async (req, res) => {
 
   // wysyłam ponownie email z odnośnikiem do werifikacji
   const sender = {
-    email: "process.env.EMAIL_FROM",
+    email: process.env.EMAIL_FROM,
     name: "Mailtrap Test",
   };
   const recipients = [
